@@ -1,8 +1,7 @@
 import pickle
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import cross_val_score
@@ -16,25 +15,21 @@ class AIClassifier:
         self._train_model()
     
     def _load_training_data(self):
-        """Load training data from files"""
+        """Load training data"""
         data_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
         
-        # Load spam messages
-        spam_file = os.path.join(data_dir, 'spam_messages.txt')
-        with open(spam_file, 'r', encoding='utf-8') as f:
-            spam_messages = [line.strip() for line in f if line.strip()]
+        def load_file(filename):
+            try:
+                with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
+                    return [line.strip() for line in f if line.strip()]
+            except:
+                return []
         
-        # Load ham messages
-        ham_file = os.path.join(data_dir, 'ham_messages.txt')
-        with open(ham_file, 'r', encoding='utf-8') as f:
-            ham_messages = [line.strip() for line in f if line.strip()]
+        spam = load_file('enhanced_spam.txt')
+        ham = load_file('enhanced_ham.txt')
+        toxic = load_file('enhanced_toxic.txt')
         
-        # Load toxic messages
-        toxic_file = os.path.join(data_dir, 'toxic_messages.txt')
-        with open(toxic_file, 'r', encoding='utf-8') as f:
-            toxic_messages = [line.strip() for line in f if line.strip()]
-        
-        return spam_messages, ham_messages, toxic_messages
+        return spam, ham, toxic
     
     def _preprocess_text(self, text: str) -> str:
         """Enhanced text preprocessing"""
@@ -77,23 +72,22 @@ class AIClassifier:
             ['toxic'] * len(toxic_messages)
         )
         
-        # Create enhanced pipeline
+        # Optimized pipeline with Gradient Boosting
         self.model = Pipeline([
             ('tfidf', TfidfVectorizer(
-                stop_words='english', 
-                lowercase=True,
-                max_features=10000,  # Increased features
-                ngram_range=(1, 3),  # Include trigrams
-                min_df=2,  # Ignore terms that appear in less than 2 documents
-                max_df=0.95,  # Ignore terms that appear in more than 95% of documents
-                sublinear_tf=True,  # Use sublinear tf scaling
-                norm='l2'  # L2 normalization
+                stop_words='english',
+                max_features=5000,
+                ngram_range=(1, 2),
+                min_df=2,
+                max_df=0.9,
+                sublinear_tf=True
             )),
-            ('classifier', LogisticRegression(
-                C=1.0,
-                max_iter=1000,
+            ('classifier', GradientBoostingClassifier(
+                n_estimators=100,
+                learning_rate=0.1,
+                max_depth=5,
                 random_state=42,
-                class_weight='balanced'  # Handle class imbalance
+                subsample=0.8
             ))
         ])
         
@@ -110,41 +104,34 @@ class AIClassifier:
         print(f"- Cross-validation accuracy: {scores.mean():.3f} (+/- {scores.std() * 2:.3f})")
     
     def classify_message(self, message: str) -> dict:
-        # Preprocess message
-        cleaned_message = self._preprocess_text(message)
+        cleaned = self._preprocess_text(message)
         
-        # Handle empty messages
-        if not cleaned_message.strip():
+        if not cleaned.strip():
             return {
                 'prediction': 'ham',
                 'confidence': 0.5,
                 'probabilities': {'ham': 0.5, 'spam': 0.25, 'toxic': 0.25}
             }
         
-        # Get prediction and probability
-        prediction = self.model.predict([cleaned_message])[0]
-        probabilities = self.model.predict_proba([cleaned_message])[0]
-        
-        # Get class names
+        prediction = self.model.predict([cleaned])[0]
+        probs = self.model.predict_proba([cleaned])[0]
         classes = self.model.classes_
         
-        # Create probability dict with all classes
-        prob_dict = {cls: 0.0 for cls in ['ham', 'spam', 'toxic']}
-        for cls, prob in zip(classes, probabilities):
-            prob_dict[cls] = prob
+        prob_dict = {cls: prob for cls, prob in zip(classes, probs)}
+        for cls in ['ham', 'spam', 'toxic']:
+            if cls not in prob_dict:
+                prob_dict[cls] = 0.0
         
-        # Calculate confidence with entropy-based measure
-        entropy = -sum(p * np.log(p + 1e-10) for p in probabilities if p > 0)
-        max_entropy = np.log(len(classes))
-        confidence = 1 - (entropy / max_entropy)
+        # Improved confidence calculation
+        max_prob = max(probs)
+        second_max = sorted(probs)[-2] if len(probs) > 1 else 0
+        confidence = max_prob - second_max + 0.5
+        confidence = min(confidence, 1.0)
         
         return {
             'prediction': prediction,
             'confidence': confidence,
-            'probabilities': prob_dict,
-            'raw_probabilities': probabilities.tolist(),
-            'message_length': len(message),
-            'cleaned_length': len(cleaned_message)
+            'probabilities': prob_dict
         }
 
 ai_classifier = AIClassifier()

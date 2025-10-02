@@ -30,6 +30,11 @@ class ResetPasswordRequest(BaseModel):
     otp_code: str
     new_password: str
 
+class ChangePasswordRequest(BaseModel):
+    user_id: str
+    current_password: str
+    new_password: str
+
 @router.post("/register")
 async def register(request: RegisterRequest):
     result = await auth_service.register_user(request.email, request.username, request.password)
@@ -95,4 +100,11 @@ async def get_user_by_id(user_id: str):
     result = await auth_service.get_user_by_id(user_id)
     if not result["success"]:
         raise HTTPException(status_code=404, detail=result["message"])
+    return result
+
+@router.post("/change-password")
+async def change_password(request: ChangePasswordRequest):
+    result = await auth_service.change_password(request.user_id, request.current_password, request.new_password)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
     return result

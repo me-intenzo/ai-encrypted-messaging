@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from app.models.message import MessageCreate, MessageResponse, DecryptedMessage
 from app.utils.crypto import crypto_manager
 from app.services.ai_classifier import ai_classifier
-from app.services.fuzzy_logic import fuzzy_engine
+from app.services.fuzzy_logic import evaluate_message
 from app.services.supabase_client import supabase_service
 import json
 from datetime import datetime
@@ -34,11 +34,9 @@ async def send_message(message: MessageCreate):
         # Encrypt the message
         encrypted_data = crypto_manager.encrypt_message(message.content)
         
-        # Classify message with AI
+        # AI + Fuzzy evaluation
         ai_result = ai_classifier.classify_message(message.content)
-        
-        # Apply fuzzy logic with message context
-        fuzzy_result = fuzzy_engine.make_decision(ai_result, message.content)
+        eval_result = evaluate_message(message.content, ai_result)
         
         # Prepare message data
         message_data = {
@@ -46,10 +44,10 @@ async def send_message(message: MessageCreate):
             "sender_id": message.sender_id,
             "recipient_id": message.recipient_id,
             "encrypted_content": json.dumps(encrypted_data),
-            "status": fuzzy_result['decision'],
-            "ai_score": ai_result['confidence'],
-            "fuzzy_score": fuzzy_result['score'],
-            "fuzzy_details": json.dumps(fuzzy_result['fuzzy_details']),
+            "status": eval_result['status'],
+            "ai_score": eval_result['ai_analysis']['confidence'],
+            "fuzzy_score": eval_result['fuzzy_score'],
+            "fuzzy_details": json.dumps(eval_result['ai_analysis']),
             "created_at": datetime.utcnow().isoformat()
         }
         

@@ -482,5 +482,30 @@ class AuthService:
             
         except Exception as e:
             return {"success": False, "message": str(e)}
+    
+    async def change_password(self, user_id: str, current_password: str, new_password: str) -> dict:
+        """Change user password"""
+        try:
+            user = await supabase_service.get_user_by_id(user_id)
+            if not user:
+                return {"success": False, "message": "User not found"}
+            
+            # Verify current password
+            current_hash = self._hash_password(current_password)
+            if user["password_hash"] != current_hash:
+                return {"success": False, "message": "Current password is incorrect"}
+            
+            # Validate new password
+            password_validation = self._validate_password_strength(new_password)
+            if not password_validation["valid"]:
+                return {"success": False, "message": "; ".join(password_validation["errors"])}
+            
+            # Update password
+            new_hash = self._hash_password(new_password)
+            await supabase_service.update_user(user_id, {"password_hash": new_hash})
+            
+            return {"success": True, "message": "Password changed successfully"}
+        except Exception as e:
+            return {"success": False, "message": str(e)}
 
 auth_service = AuthService()
