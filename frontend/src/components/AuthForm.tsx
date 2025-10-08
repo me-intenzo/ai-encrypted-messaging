@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Shield, Mail, User, Lock, ArrowRight, Sparkles } from 'lucide-react'
 import TermsModal from './TermsModal'
+import Toast from './Toast'
 import { authManager } from '@/lib/auth'
 
 interface AuthFormProps {
@@ -25,6 +26,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
   const [error, setError] = useState('')
   const [userId, setUserId] = useState('')
   const [showTerms, setShowTerms] = useState(false)
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -56,7 +58,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
             })
             onAuthSuccess(result.user_id, result.email, result.username)
           } else {
-            setError(result.message)
+            setToast({ message: result.message || 'Invalid credentials', type: 'error' })
           }
         } else {
           const response = await fetch('http://localhost:8000/api/auth/register', {
@@ -74,7 +76,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
             setUserId(result.user_id)
             setStep('otp')
           } else {
-            setError(result.message)
+            setToast({ message: result.message || 'Registration failed', type: 'error' })
           }
         }
       } else if (step === 'forgot') {
@@ -90,11 +92,11 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         if (result.success) {
           setStep('reset')
         } else {
-          setError(result.message)
+          setToast({ message: result.message || 'Failed to send code', type: 'error' })
         }
       } else if (step === 'reset') {
         if (formData.newPassword !== formData.confirmPassword) {
-          setError('Passwords do not match')
+          setToast({ message: 'Passwords do not match', type: 'error' })
           return
         }
         
@@ -112,9 +114,9 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         if (result.success) {
           setStep('form')
           setError('')
-          alert('Password reset successfully! Please login with your new password.')
+          setToast({ message: 'Password reset successfully!', type: 'success' })
         } else {
-          setError(result.message)
+          setToast({ message: result.message || 'Reset failed', type: 'error' })
         }
       } else if (step === 'otp') {
         const response = await fetch('http://localhost:8000/api/auth/verify-otp', {
@@ -130,11 +132,11 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         if (result.success) {
           onAuthSuccess(result.user_id, formData.email, formData.username)
         } else {
-          setError(result.message)
+          setToast({ message: result.message || 'Invalid OTP', type: 'error' })
         }
       }
     } catch (err) {
-      setError('Network error. Please try again.')
+      setToast({ message: 'Network error. Please try again.', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -666,6 +668,7 @@ export default function AuthForm({ onAuthSuccess }: AuthFormProps) {
         isOpen={showTerms}
         onClose={() => setShowTerms(false)}
       />
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }

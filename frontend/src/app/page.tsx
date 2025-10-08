@@ -1,12 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MessageCircle, Users, LogOut, Settings, Plus, Shield, Sparkles, Zap } from 'lucide-react'
+import { MessageCircle, Users, LogOut, Settings, Plus, Shield, Sparkles, Zap, Menu } from 'lucide-react'
 import AuthForm from '@/components/AuthForm'
 import ChatInterface from '@/components/ChatInterface'
 import UserSearchModal from '@/components/UserSearchModal'
-import ProfileModal from '@/components/ProfileModal'
+import HeroPage from '@/components/HeroPage'
+import SettingsPage from '@/components/SettingsPage'
 import AIVisualization from '@/components/AIVisualization'
+import { ParticlesSVG, ShieldSVG } from '@/components/SVGBackgrounds'
+import AnimatedButton from '@/components/AnimatedButton'
 import { authManager } from '@/lib/auth'
 
 export default function Home() {
@@ -17,7 +20,10 @@ export default function Home() {
   const [chats, setChats] = useState<{id: string, username: string, lastMessage?: string}[]>([])
   const [chatPartnerUsername, setChatPartnerUsername] = useState<string>('')
   const [showSearchModal, setShowSearchModal] = useState(false)
-  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showHero, setShowHero] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false)
 
   const getUsernameById = async (userId: string): Promise<string> => {
     try {
@@ -56,7 +62,7 @@ export default function Home() {
     loadChats(userId)
   }
   
-  // Auto-login on component mount
+  // Auto-login and responsive check
   useEffect(() => {
     const tryAutoLogin = async () => {
       try {
@@ -73,7 +79,13 @@ export default function Home() {
       }
     }
     
+    const checkMobile = () => setIsMobile(window.innerWidth < 1024)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
     tryAutoLogin()
+    
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   const handleLogout = () => {
@@ -102,333 +114,150 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{
-          textAlign: 'center',
-          color: 'white'
-        }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px',
-            animation: 'spin 1s linear infinite'
-          }}>
-            <Shield size={32} color="white" />
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+        <ParticlesSVG />
+        <div className="text-center z-10 animate-scaleIn">
+          <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-purple-500/50">
+            <Shield className="w-12 h-12 text-white" />
           </div>
-          <p style={{ fontSize: '18px', fontWeight: '600' }}>Loading AI SecureChat...</p>
+          <h2 className="text-2xl font-bold text-white mb-2">Loading SecureChat AI</h2>
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" />
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+          </div>
         </div>
       </div>
     )
   }
   
   if (!user) {
+    if (showHero) {
+      return <HeroPage onGetStarted={() => setShowHero(false)} />
+    }
     return <AuthForm onAuthSuccess={handleAuthSuccess} />
   }
 
   return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      fontFamily: 'Inter, sans-serif'
-    }}>
+    <div className="fixed inset-0 flex bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 overflow-hidden">
+      <ParticlesSVG />
+      
+      {/* Mobile Menu Button */}
+      {isMobile && (
+        <button
+          onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+          className="fixed top-4 left-4 z-50 p-3 bg-gray-900/80 backdrop-blur-xl rounded-xl border border-white/20 text-white hover:bg-gray-800/80 transition-all animate-scaleIn"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+      
+      {/* Sidebar Overlay for Mobile */}
+      {isMobile && showMobileSidebar && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 animate-fadeIn"
+          onClick={() => setShowMobileSidebar(false)}
+        />
+      )}
+      
       {/* Sidebar */}
-      <div style={{
-        width: '320px',
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.2)',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
+      <div className={`
+        ${isMobile ? 'fixed left-0 top-0 h-full z-50 transform transition-all duration-300 ease-out' : 'relative'}
+        ${isMobile && !showMobileSidebar ? '-translate-x-full' : 'translate-x-0'}
+        ${isMobile ? 'w-80' : 'w-80 lg:w-96'}
+        bg-slate-900/95 backdrop-blur-xl border-r border-slate-700 flex flex-col
+        ${!isMobile && 'page-transition'}
+      `}>
         {/* Header */}
-        <div style={{
-          padding: '24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '20px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <button
-                onClick={() => setShowProfileModal(true)}
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)',
-                  borderRadius: '12px',
-                  border: 'none',
-                  color: 'white',
-                  fontSize: '18px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s',
-                  boxShadow: '0 4px 15px rgba(168, 85, 247, 0.4)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
+        <div className="p-6 border-b border-slate-700">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl text-white text-lg font-bold flex items-center justify-center shadow-lg shadow-purple-500/50">
                 {username?.charAt(0)?.toUpperCase() || 'A'}
-              </button>
+              </div>
               <div>
-                <h2 style={{
-                  fontSize: '18px',
-                  fontWeight: '600',
-                  color: 'white',
-                  margin: 0
-                }}>
+                <h2 className="text-lg font-semibold text-white">
                   @{username || 'user'}
                 </h2>
-                <p style={{
-                  fontSize: '14px',
-                  color: 'rgba(255, 255, 255, 0.7)',
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}>
-                  <span style={{
-                    width: '8px',
-                    height: '8px',
-                    background: '#10b981',
-                    borderRadius: '50%',
-                    animation: 'pulse 2s infinite'
-                  }}></span>
+                <p className="text-sm text-white/70 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   Online
                 </p>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                onClick={() => setShowProfileModal(true)}
-                style={{
-                  padding: '8px',
-                  background: 'rgba(255, 255, 255, 0.1)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
-              >
-                <Settings size={20} />
-              </button>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: '8px',
-                  background: 'rgba(239, 68, 68, 0.2)',
-                  border: 'none',
-                  borderRadius: '8px',
-                  color: '#ef4444',
-                  cursor: 'pointer',
-                  transition: 'background 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.3)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
+            <button
+              onClick={() => setShowSettings(true)}
+              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-gray-400 hover:text-white transition-all duration-300"
+            >
+              <Settings size={20} />
+            </button>
           </div>
 
-          {/* AI SecureChat Branding */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-            padding: '12px',
-            background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)',
-            borderRadius: '12px',
-            marginBottom: '16px',
-            boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)'
-          }}>
-            <Shield size={20} color="white" />
-            <span style={{
-              color: 'white',
-              fontWeight: '600',
-              fontSize: '16px'
-            }}>
-              AI SecureChat
+          {/* Branding */}
+          <div className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl mb-4">
+            <Shield size={20} className="text-purple-400" />
+            <span className="text-white font-semibold text-base">
+              SecureChat AI
             </span>
-            <Sparkles size={16} color="white" />
           </div>
 
           {/* New Chat Button */}
-          <button
+          <AnimatedButton
+            variant="secondary"
+            icon={<Plus size={20} />}
             onClick={() => setShowSearchModal(true)}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)',
-              color: 'white',
-              padding: '12px 16px',
-              borderRadius: '12px',
-              border: 'none',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: '0 4px 15px rgba(6, 182, 212, 0.3)'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 25px rgba(6, 182, 212, 0.4)'
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 4px 15px rgba(6, 182, 212, 0.3)'
-            }}
+            className="w-full"
           >
-            <Plus size={20} />
             New Chat
-          </button>
+          </AnimatedButton>
         </div>
 
         {/* Chat List */}
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '16px'
-        }}>
+        <div className="flex-1 overflow-y-auto p-4">
           {chats.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: '48px 16px',
-              color: 'rgba(255, 255, 255, 0.7)'
-            }}>
-              <div style={{
-                width: '64px',
-                height: '64px',
-                background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)',
-                borderRadius: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                animation: 'float 6s ease-in-out infinite'
-              }}>
-                <MessageCircle size={32} color="white" />
+            <div className="text-center py-12 px-4 text-white/70">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-float shadow-lg shadow-purple-500/50">
+                <MessageCircle size={32} className="text-white" />
               </div>
-              <p style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: 'white',
-                margin: '0 0 8px'
-              }}>
+              <p className="text-base font-semibold text-white mb-2">
                 No conversations yet
               </p>
-              <p style={{
-                fontSize: '14px',
-                margin: 0
-              }}>
+              <p className="text-sm">
                 Start a secure chat with someone
               </p>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {chats.map((chat) => (
+            <div className="flex flex-col gap-2">
+              {chats.map((chat, index) => (
                 <button
                   key={chat.id}
                   onClick={() => {
                     setSelectedChat(chat.id)
                     setChatPartnerUsername(chat.username)
+                    if (isMobile) setShowMobileSidebar(false)
                   }}
-                  style={{
-                    width: '100%',
-                    padding: '16px',
-                    textAlign: 'left',
-                    borderRadius: '12px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    background: selectedChat === chat.id 
-                      ? 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)'
-                      : 'rgba(255, 255, 255, 0.1)',
-                    color: 'white',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                  onMouseOver={(e) => {
-                    if (selectedChat !== chat.id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.15)'
-                      e.currentTarget.style.transform = 'translateY(-2px)'
+                  className={`
+                    w-full p-4 text-left rounded-xl border transition-smooth
+                    hover:scale-[1.02] hover:shadow-lg
+                    ${selectedChat === chat.id
+                      ? 'bg-purple-500/20 border-purple-500/50 shadow-purple-500/20'
+                      : 'bg-slate-800 border-slate-700 hover:bg-slate-700'
                     }
-                  }}
-                  onMouseOut={(e) => {
-                    if (selectedChat !== chat.id) {
-                      e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                      e.currentTarget.style.transform = 'translateY(0)'
-                    }
-                  }}
+                  `}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      position: 'relative'
-                    }}>
-                      <div style={{
-                        width: '48px',
-                        height: '48px',
-                        background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontSize: '18px',
-                        fontWeight: 'bold'
-                      }}>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-purple-500 rounded-xl flex items-center justify-center text-white text-lg font-bold shadow-lg">
                         {chat.username?.charAt(0)?.toUpperCase() || '?'}
                       </div>
-                      <div style={{
-                        position: 'absolute',
-                        bottom: '-2px',
-                        right: '-2px',
-                        width: '16px',
-                        height: '16px',
-                        background: '#10b981',
-                        borderRadius: '50%',
-                        border: '2px solid rgba(255, 255, 255, 0.2)'
-                      }}></div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-gray-900 animate-pulse" />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{
-                        fontWeight: '600',
-                        fontSize: '16px',
-                        marginBottom: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                      }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-base mb-1 flex items-center gap-2">
                         @{chat.username}
-                        <Zap size={14} color="#fbbf24" />
+                        <Zap size={14} className="text-yellow-400 animate-bounce-slow" />
                       </div>
-                      <div style={{
-                        fontSize: '14px',
-                        opacity: 0.8,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
+                      <div className="text-sm opacity-80 truncate">
                         {chat.lastMessage || 'No messages yet'}
                       </div>
                     </div>
@@ -441,7 +270,7 @@ export default function Home() {
       </div>
 
       {/* Main Chat Area */}
-      <div style={{ flex: 1, display: 'flex' }}>
+      <div className="flex-1 flex relative z-10 min-w-0 page-transition">
         {selectedChat ? (
           <ChatInterface 
             currentUserId={user} 
@@ -452,105 +281,43 @@ export default function Home() {
             onLogout={handleLogout}
           />
         ) : (
-          <div style={{
-            display: 'flex',
-            width: '100%'
-          }}>
+          <div className="flex w-full">
             {/* Welcome Section */}
-            <div style={{
-              width: '70%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'rgba(255, 255, 255, 0.05)',
-              backdropFilter: 'blur(20px)'
-            }}>
-            <div style={{
-              textAlign: 'center',
-              padding: '32px'
-            }}>
-              <div style={{
-                width: '128px',
-                height: '128px',
-                background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 100%)',
-                borderRadius: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 32px',
-                animation: 'float 6s ease-in-out infinite',
-                boxShadow: '0 20px 40px rgba(168, 85, 247, 0.3)'
-              }}>
-                <MessageCircle size={64} color="white" />
-              </div>
-              <h2 style={{
-                fontSize: '32px',
-                fontWeight: '700',
-                color: 'white',
-                margin: '0 0 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '12px'
-              }}>
-                Welcome to AI SecureChat
-                <Sparkles size={32} color="#a855f7" />
-              </h2>
-              <p style={{
-                fontSize: '18px',
-                color: 'rgba(255, 255, 255, 0.7)',
-                margin: '0 0 32px'
-              }}>
-                Select a conversation to start secure messaging
-              </p>
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '32px',
-                fontSize: '14px'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#10b981'
-                }}>
-                  <Shield size={16} />
-                  End-to-End Encrypted
+            <div className="flex-1 flex items-center justify-center bg-slate-900/50 backdrop-blur-xl page-transition">
+              <div className="text-center p-8">
+                <div className="w-32 h-32 bg-gradient-to-br from-purple-500 to-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-8 animate-float shadow-2xl shadow-purple-500/50">
+                  <MessageCircle size={64} className="text-white" />
                 </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#3b82f6'
-                }}>
-                  <Zap size={16} />
-                  AI-Protected
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#a855f7'
-                }}>
-                  <Sparkles size={16} />
-                  Secure
+                <h2 className="text-4xl font-bold text-white mb-4 flex items-center justify-center gap-3">
+                  Welcome to AI SecureChat
+                  <Sparkles size={32} className="text-purple-400 animate-bounce-slow" />
+                </h2>
+                <p className="text-lg text-white/70 mb-8">
+                  Select a conversation to start secure messaging
+                </p>
+                <div className="flex items-center justify-center gap-8 text-sm">
+                  <div className="flex items-center gap-2 text-green-400">
+                    <Shield size={16} className="animate-pulse" />
+                    End-to-End Encrypted
+                  </div>
+                  <div className="flex items-center gap-2 text-blue-400">
+                    <Zap size={16} className="animate-pulse" style={{ animationDelay: '0.2s' }} />
+                    AI-Protected
+                  </div>
+                  <div className="flex items-center gap-2 text-purple-400">
+                    <Sparkles size={16} className="animate-pulse" style={{ animationDelay: '0.4s' }} />
+                    Secure
+                  </div>
                 </div>
               </div>
-            </div>
             </div>
             
             {/* AI Visualization Section */}
-            <div style={{
-              width: '30%',
-              minWidth: '350px',
-              background: 'rgba(17, 24, 39, 0.3)',
-              backdropFilter: 'blur(20px)',
-              borderLeft: '1px solid rgba(255, 255, 255, 0.1)'
-            }}>
-              <AIVisualization isActive={false} />
-            </div>
+            {!isMobile && (
+              <div className="w-96 bg-slate-900/50 backdrop-blur-xl border-l border-slate-700 page-transition">
+                <AIVisualization isActive={false} />
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -562,12 +329,12 @@ export default function Home() {
         currentUsername={username || ''}
       />
       
-      <ProfileModal
-        isOpen={showProfileModal}
-        onClose={() => setShowProfileModal(false)}
-        currentUsername={username || ''}
-        currentUserId={user || ''}
-        onUsernameUpdate={(newUsername) => setUsername(newUsername)}
+      <SettingsPage
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        username={username || ''}
+        userId={user || ''}
+        onLogout={handleLogout}
       />
     </div>
   )
