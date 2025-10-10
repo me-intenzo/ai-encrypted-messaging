@@ -24,10 +24,10 @@ export default function Toast({ message, type, onClose }: ToastProps) {
   const { icon: Icon, bg, border } = config[type]
 
   return (
-    <div className={`fixed top-4 right-4 z-50 ${bg} border ${border} text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] animate-slideInRight`}>
+    <div className={`fixed top-4 right-4 z-50 ${bg} border ${border} text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-3 min-w-[300px] animate-notification`}>
       <Icon className="w-5 h-5 flex-shrink-0" />
       <span className="flex-1 text-sm font-medium">{message}</span>
-      <button onClick={onClose} className="hover:bg-white/20 rounded p-1 transition-colors">
+      <button onClick={onClose} className="hover:bg-white/20 rounded p-1 transition-colors active:scale-90">
         <X className="w-4 h-4" />
       </button>
     </div>

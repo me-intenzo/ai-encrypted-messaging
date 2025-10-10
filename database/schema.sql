@@ -11,7 +11,8 @@ CREATE TABLE users (
     otp_expires_at TIMESTAMP WITH TIME ZONE,
     is_verified BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    bio TEXT
 );
 
 -- Messages table
@@ -72,3 +73,25 @@ CREATE TRIGGER update_messages_updated_at
     BEFORE UPDATE ON messages 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+    -- Updated schema with bio and feedback protection
+
+-- Add bio to users table
+ALTER TABLE users ADD COLUMN IF NOT EXISTS bio TEXT;
+
+-- Update feedback table with review flag
+ALTER TABLE message_feedback ADD COLUMN IF NOT EXISTS needs_review BOOLEAN DEFAULT TRUE;
+
+-- Add indexes for performance
+CREATE INDEX IF NOT EXISTS idx_feedback_user_time ON message_feedback(user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_review ON message_feedback(needs_review);
+
+-- Add feedback table to existing schema
+CREATE TABLE IF NOT EXISTS message_feedback (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    message_id UUID REFERENCES messages(id),
+    user_id UUID REFERENCES users(id),
+    feedback_type VARCHAR(20) NOT NULL,
+    original_content TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);

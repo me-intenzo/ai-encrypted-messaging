@@ -30,10 +30,10 @@ export default function AnimatedButton({
       className={`
         relative overflow-hidden
         px-6 py-3 rounded-xl font-semibold
-        transform transition-all duration-300
-        hover:scale-105 hover:-translate-y-1
-        active:scale-95
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+        transition-all duration-200
+        hover:opacity-90 hover:shadow-lg
+        active:animate-buttonPress
+        disabled:opacity-50 disabled:cursor-not-allowed
         flex items-center justify-center gap-2
         ${variants[variant]}
         ${className}
@@ -41,16 +41,12 @@ export default function AnimatedButton({
       disabled={loading}
       {...props}
     >
-      {/* Shimmer Effect */}
-      <div className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+
       
       {/* Content */}
       <span className="relative flex items-center gap-2">
         {loading ? (
-          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-          </svg>
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
         ) : icon}
         {children}
       </span>

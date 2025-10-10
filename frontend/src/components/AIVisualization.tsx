@@ -23,14 +23,14 @@ export default function AIVisualization({ isActive = false }: AIVisualizationPro
     let animationId: number
     let time = 0
 
-    const animate = () => {
+    const drawStatic = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       
-      // Neural network visualization
+      // Simple static neural network visualization
       const centerX = canvas.width / 2
       const centerY = canvas.height / 2
       
-      // Draw neural network nodes
+      // Draw static neural network nodes
       const layers = [
         { nodes: 4, y: centerY - 150, color: '#3b82f6' },
         { nodes: 6, y: centerY - 50, color: '#8b5cf6' },
@@ -44,25 +44,20 @@ export default function AIVisualization({ isActive = false }: AIVisualizationPro
         
         for (let i = 0; i < layer.nodes; i++) {
           const x = startX + i * nodeSpacing
-          const y = layer.y + Math.sin(time * 0.02 + i * 0.5) * 5
+          const y = layer.y
           
-          // Node glow
-          const gradient = ctx.createRadialGradient(x, y, 0, x, y, 15)
-          gradient.addColorStop(0, layer.color + '80')
-          gradient.addColorStop(1, layer.color + '20')
-          
-          ctx.fillStyle = gradient
+          // Simple node
+          ctx.fillStyle = layer.color + '60'
           ctx.beginPath()
-          ctx.arc(x, y, 15, 0, Math.PI * 2)
+          ctx.arc(x, y, 12, 0, Math.PI * 2)
           ctx.fill()
           
-          // Node core
           ctx.fillStyle = layer.color
           ctx.beginPath()
-          ctx.arc(x, y, 8, 0, Math.PI * 2)
+          ctx.arc(x, y, 6, 0, Math.PI * 2)
           ctx.fill()
           
-          // Connections to next layer
+          // Static connections
           if (layerIndex < layers.length - 1) {
             const nextLayer = layers[layerIndex + 1]
             const nextStartX = centerX - (nextLayer.nodes - 1) * nodeSpacing / 2
@@ -71,8 +66,7 @@ export default function AIVisualization({ isActive = false }: AIVisualizationPro
               const nextX = nextStartX + j * nodeSpacing
               const nextY = nextLayer.y
               
-              const opacity = 0.3 + Math.sin(time * 0.03 + i + j) * 0.2
-              ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'
               ctx.lineWidth = 1
               ctx.beginPath()
               ctx.moveTo(x, y)
@@ -82,30 +76,11 @@ export default function AIVisualization({ isActive = false }: AIVisualizationPro
           }
         }
       })
-      
-      // Floating particles
-      for (let i = 0; i < 20; i++) {
-        const x = centerX + Math.sin(time * 0.01 + i) * 150
-        const y = centerY + Math.cos(time * 0.015 + i) * 200
-        const size = 2 + Math.sin(time * 0.02 + i) * 1
-        
-        ctx.fillStyle = `rgba(99, 102, 241, ${0.5 + Math.sin(time * 0.02 + i) * 0.3})`
-        ctx.beginPath()
-        ctx.arc(x, y, size, 0, Math.PI * 2)
-        ctx.fill()
-      }
-      
-      time++
-      animationId = requestAnimationFrame(animate)
     }
     
-    animate()
+    drawStatic()
     
-    return () => {
-      if (animationId) {
-        cancelAnimationFrame(animationId)
-      }
-    }
+    return () => {}
   }, [])
 
   return (
@@ -121,10 +96,10 @@ export default function AIVisualization({ isActive = false }: AIVisualizationPro
       <div className="relative z-10 text-center space-y-8">
         {/* AI Brain Icon */}
         <div className="relative mb-4">
-          <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto animate-pulse shadow-2xl">
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
             <Brain size={48} className="text-white" />
           </div>
-          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+          <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
             <Activity size={12} className="text-white" />
           </div>
         </div>

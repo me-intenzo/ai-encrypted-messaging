@@ -57,6 +57,8 @@ export default function ChatInterface({
   const [ws, setWs] = useState<WebSocket | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [sendSuccess, setSendSuccess] = useState(false)
+  const [sendError, setSendError] = useState(false)
 
   useEffect(() => {
     if (chatPartnerId) {
@@ -92,11 +94,14 @@ export default function ChatInterface({
 
   const loadMessages = async () => {
     try {
+      setLoading(true)
       const response = await fetch(`http://localhost:8000/api/messages/chat/${chatPartnerId}?user_id=${currentUserId}`)
       const data = await response.json()
-  setMessages(Array.isArray(data) ? data : [])
+      setMessages(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Failed to load messages')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -137,12 +142,20 @@ export default function ChatInterface({
   setMessages(prev => (Array.isArray(prev) ? prev : []).filter(m => m.id !== tempMessage.id))
         loadMessages()
         onNewMessage?.()
+        
+        // Success feedback
+        setSendSuccess(true)
+        setTimeout(() => setSendSuccess(false), 1000)
       }
     } catch (err) {
       console.error('Failed to send message')
       // Remove temp message on error
   setMessages(prev => (Array.isArray(prev) ? prev : []).filter(m => m.id !== tempMessage.id))
       setNewMessage(messageContent)
+      
+      // Error feedback
+      setSendError(true)
+      setTimeout(() => setSendError(false), 1000)
     } finally {
       setLoading(false)
     }
@@ -161,7 +174,7 @@ export default function ChatInterface({
         <div className="flex items-center gap-3">
           <button
             onClick={() => window.location.reload()}
-            className="p-2 text-gray-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-300"
+            className="p-2 text-gray-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-all duration-200 active:animate-buttonPress hover:shadow-md"
             title="Back to chats"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -172,7 +185,6 @@ export default function ChatInterface({
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               @{chatPartnerUsername || 'User'}
-              <Sparkles className="w-4 h-4 text-yellow-400 animate-bounce-slow" />
             </h2>
             <p className="text-sm text-gray-400 flex items-center gap-2 mt-1">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -184,24 +196,33 @@ export default function ChatInterface({
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4">
-  {(Array.isArray(messages) ? messages : []).map((message) => (
-          <MessageBubble
-            key={message.id}
-            content={message.content}
-            isSent={message.sender_id === currentUserId}
-            status={message.status}
-            timestamp={message.created_at}
-            senderName={message.sender_id === currentUserId ? 'You' : chatPartnerUsername}
-            aiAnalysis={message.ai_analysis}
-            fuzzyScore={message.fuzzy_score}
-          />
-
-        ))}
+        {loading && messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="flex items-center gap-3 text-gray-400">
+              <div className="w-6 h-6 border-2 border-gray-400/30 border-t-gray-400 rounded-full animate-spin" />
+              <span>Loading messages...</span>
+            </div>
+          </div>
+        ) : (
+          (Array.isArray(messages) ? messages : []).map((message) => (
+            <MessageBubble
+              key={message.id}
+              id={message.id}
+              content={message.content}
+              isSent={message.sender_id === currentUserId}
+              status={message.status}
+              timestamp={message.created_at}
+              senderName={message.sender_id === currentUserId ? 'You' : chatPartnerUsername}
+              aiAnalysis={message.ai_analysis}
+              fuzzyScore={message.fuzzy_score}
+            />
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
-      <div className="bg-slate-900/95 backdrop-blur-xl border-t border-slate-700 p-4 animate-slideInUp">
+      <div className="bg-slate-900/95 backdrop-blur-xl border-t border-slate-700 p-4">
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -209,16 +230,19 @@ export default function ChatInterface({
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-            className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-2xl text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+            className="flex-1 px-4 py-3 bg-slate-800 border border-slate-700 rounded-2xl text-white placeholder-gray-400 outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 focus:shadow-lg"
           />
           <button
             onClick={sendMessage}
             disabled={loading || !newMessage.trim()}
             className={`
-              w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300
-              ${loading || !newMessage.trim()
+              w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200
+              active:animate-buttonPress
+              ${sendSuccess ? 'animate-success bg-green-500' :
+                sendError ? 'animate-error bg-red-500' :
+                loading || !newMessage.trim()
                 ? 'bg-gray-600 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:scale-110 shadow-lg shadow-blue-500/50'
+                : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:shadow-lg shadow-lg shadow-blue-500/50'
               }
             `}
           >
@@ -234,7 +258,7 @@ export default function ChatInterface({
       
       {/* AI Visualization Section */}
       {!isMobile && (
-        <div className="w-96 bg-slate-900/50 backdrop-blur-xl border-l border-slate-700 animate-slideInRight">
+        <div className="w-96 bg-slate-900/50 backdrop-blur-xl border-l border-slate-700">
           <AIVisualization isActive={true} />
         </div>
       )}
