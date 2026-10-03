@@ -66,7 +66,7 @@ git --version     # Should be 2.0 or higher
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ai-encrypted-messaging.git
+git clone https://github.com/me-intenzo/ai-encrypted-messaging.git
 
 # Navigate to project directory
 cd ai-encrypted-messaging
@@ -606,7 +606,7 @@ eb deploy
 4. **Clone and Setup**
    ```bash
    # Clone repository
-   git clone https://github.com/yourusername/ai-encrypted-messaging.git
+   git clone https://github.com/me-intenzo/ai-encrypted-messaging.git
    cd ai-encrypted-messaging
    
    # Setup backend
