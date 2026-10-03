@@ -303,7 +303,7 @@ messages (
 
 ```bash
 # Clone repository
-git clone https://github.com/nagesh2006/ai-encrypted-messaging.git
+git clone https://github.com/me-intenzo/ai-encrypted-messaging.git
 cd ai-encrypted-messaging
 
 # Backend setup
@@ -738,8 +738,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ## 📞 Support & Contact
 
 - **Documentation**: [SETUP_GUIDE.md](SETUP_GUIDE.md)
-- **Issues**: [GitHub Issues](https://github.com/nagesh2006/ai-encrypted-messaging/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/nagesh2006/ai-encrypted-messaging/discussions)
+- **Issues**: [GitHub Issues](https://github.com/me-intenzo/ai-encrypted-messaging/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/me-intenzo/ai-encrypted-messaging/discussions)
 - **Email**: support@aisecurechat.com (if applicable)
 
 ---
@@ -756,10 +756,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📊 Project Stats
 
-![GitHub stars](https://img.shields.io/github/stars/nagesh2006/ai-encrypted-messaging?style=social)
-![GitHub forks](https://img.shields.io/github/forks/nagesh2006/ai-encrypted-messaging?style=social)
-![GitHub issues](https://img.shields.io/github/issues/nagesh2006/ai-encrypted-messaging)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/nagesh2006/ai-encrypted-messaging)
+![GitHub stars](https://img.shields.io/github/stars/me-intenzo/ai-encrypted-messaging?style=social)
+![GitHub forks](https://img.shields.io/github/forks/me-intenzo/ai-encrypted-messaging?style=social)
+![GitHub issues](https://img.shields.io/github/issues/me-intenzo/ai-encrypted-messaging)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/me-intenzo/ai-encrypted-messaging)
 
 ---
 
